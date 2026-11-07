@@ -33,8 +33,13 @@ function parse(md){
   md.split(/\r?\n/).forEach(function(l){
     var m=l.match(/^##\s+(\d{4}-\d{2}-\d{2})/);
     if(m){cur={date:m[1],items:[]};days.push(cur);return;}
-    m=l.match(/^[-*]\s+(\d{1,2}):(\d{2})\s*[|–-]?\s*(.+)$/);
-    if(m&&cur)cur.items.push({h:+m[1],m:+m[2],t:m[3]});
+    m=l.match(/^[-*]\s+(\d{1,2})(?::(\d{2}))?\s*([ap]m)?\b\s*[|–-]?\s*(.+)$/i);
+    if(m&&cur&&(m[2]||m[3])){
+      var h=+m[1],ap=(m[3]||"").toLowerCase();
+      if(ap==="pm"&&h<12)h+=12;
+      if(ap==="am"&&h===12)h=0;
+      cur.items.push({h:h,m:+(m[2]||0),t:m[4]});
+}
   });
   days.forEach(function(d){d.items.sort(function(a,b){return a.h*60+a.m-b.h*60-b.m;});});
   return days.sort(function(a,b){return b.date.localeCompare(a.date);});
@@ -56,7 +61,7 @@ function renderChain(md,el){
       var dot=document.createElement("span");dot.className="dot";
       var box=document.createElement("div");box.className="thought";
       var t=document.createElement("span");t.className="time";
-      t.textContent=String(it.h).padStart(2,"0")+":"+String(it.m).padStart(2,"0");
+      t.textContent=(it.h%12||12)+":"+String(it.m).padStart(2,"0")+" "+(it.h<12?"AM":"PM");
       box.appendChild(t);box.appendChild(document.createTextNode(it.t));
       n.appendChild(dot);n.appendChild(box);chain.appendChild(n);
     });
